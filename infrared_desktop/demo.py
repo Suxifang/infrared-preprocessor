@@ -17,6 +17,6 @@ def create_demo(folder):
         y = background - peaks + rng.normal(0, .00010, len(x))
         path = folder / f"演示合成_{i + 1}.dat"
         np.savetxt(path, np.column_stack((x, y)), fmt="%.17g", delimiter="\t",
-                   header="合成演示数据，不是真实样品")
+                   header="合成演示数据，不是真实样品", encoding="utf-8")
         paths.append(path)
     return paths
