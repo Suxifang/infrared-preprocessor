@@ -35,9 +35,23 @@ jobs:
           $process = Start-Process -FilePath './发布/红外预处理/红外预处理.exe' -ArgumentList @('--smoke-test', ('"' + $folder + '"')) -WindowStyle Hidden -PassThru
           if (!$process.WaitForExit(60000)) { throw 'Packaged smoke test timed out' }
           $process.Refresh()
-          if ($process.ExitCode -ne 0) { throw 'Packaged smoke test failed' }
+          Write-Host "Packaged process exit code: $($process.ExitCode)"
+          if (Test-Path -LiteralPath 'ci-smoke/smoke.json') {
+            Get-Content -LiteralPath 'ci-smoke/smoke.json' -Raw
+          }
+          $startupError = Join-Path $env:TEMP 'infrared-preprocess-error.txt'
+          if (Test-Path -LiteralPath $startupError) {
+            Get-Content -LiteralPath $startupError -Raw
+          }
+          if ($process.ExitCode -ne 0) { throw 'Packaged smoke test failed; see diagnostic report above' }
           $report = Get-Content -LiteralPath 'ci-smoke/smoke.json' -Raw | ConvertFrom-Json
           if (!$report.ok) { throw 'Packaged smoke report did not pass' }
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: desktop-test-diagnostics
+          path: ci-smoke/
+          if-no-files-found: ignore
       - name: Package ZIP and integrity manifest
         run: python -X utf8 tools/package_release.py
       - uses: actions/upload-artifact@v4
